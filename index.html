@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holographic 5-Minute Countdown Timer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Share Tech Mono & Orbitron for futuristic holographic aesthetic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --theme-color: #00F0FF;
+            --theme-glow: rgba(0, 240, 255, 0.65);
+            --theme-dim: rgba(0, 240, 255, 0.18);
+            --bg-navy: #0B192C;
+            --bg-chroma: #00FF00;
+        }
+
+        /* Color Shift States */
+        body.state-cyan {
+            --theme-color: #00F0FF;
+            --theme-glow: rgba(0, 240, 255, 0.65);
+            --theme-dim: rgba(0, 240, 255, 0.18);
+        }
+
+        body.state-amber {
+            --theme-color: #FFB800;
+            --theme-glow: rgba(255, 184, 0, 0.65);
+            --theme-dim: rgba(255, 184, 0, 0.2);
+        }
+
+        body.state-red {
+            --theme-color: #FF3366;
+            --theme-glow: rgba(255, 51, 102, 0.8);
+            --theme-dim: rgba(255, 51, 102, 0.25);
+        }
+
+        /* Background Modes */
+        body.bg-mode-navy {
+            background-color: var(--bg-navy);
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.06) 0%, transparent 65%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+        }
+
+        body.bg-mode-chroma {
+            background-color: var(--bg-chroma);
+            background-image: none;
+        }
+
+        body.bg-mode-transparent {
+            background-color: transparent;
+            background-image: none;
+        }
+
+        /* High-Contrast Dark Backing Plate inside the ring for crisp Chroma Keying */
+        .hologram-plate {
+            fill: rgba(7, 16, 30, 0.88);
+            transition: fill 0.4s ease;
+        }
+
+        /* Typography & Neon Glows */
+        .font-mono-tech {
+            font-family: 'Share Tech Mono', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .neon-text {
+            color: var(--theme-color);
+            text-shadow: 
+                0 0 12px var(--theme-glow),
+                0 0 28px var(--theme-glow),
+                0 0 55px var(--theme-dim);
+            transition: color 0.4s ease, text-shadow 0.4s ease;
+        }
+
+        /* SVG Ring Glow & Transitions */
+        .ring-progress {
+            stroke: var(--theme-color);
+            filter: drop-shadow(0 0 8px var(--theme-glow)) drop-shadow(0 0 16px var(--theme-dim));
+            transition: stroke 0.4s ease, filter 0.4s ease;
+        }
+
+        .ring-accent {
+            stroke: var(--theme-color);
+            transition: stroke 0.4s ease;
+        }
+
+        .ring-track {
+            stroke: var(--theme-dim);
+            transition: stroke 0.4s ease;
+        }
+
+        /* Slow futuristic HUD rotation for inner decorative ring */
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes spin-reverse {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+
+        .hud-rotate-cw {
+            transform-origin: 200px 200px;
+            animation: spin-slow 60s linear infinite;
+        }
+
+        .hud-rotate-ccw {
+            transform-origin: 200px 200px;
+            animation: spin-reverse 45s linear infinite;
+        }
+
+        .paused-anim .hud-rotate-cw,
+        .paused-anim .hud-rotate-ccw {
+            animation-play-state: paused;
+        }
+
+        /* Final 15 Seconds Urgent Pulse */
+        @keyframes critical-pulse {
+            0%, 100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            50% {
+                transform: scale(1.035);
+                filter: brightness(1.3);
+            }
+        }
+
+        .pulsing-critical {
+            animation: critical-pulse 0.85s ease-in-out infinite;
+        }
+
+        /* Time's Up Flash */
+        @keyframes times-up-blink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.45; transform: scale(0.97); }
+        }
+
+        .times-up-anim {
+            animation: times-up-blink 1.1s ease-in-out infinite;
+        }
+
+        /* Holographic Buttons */
+        .holo-btn {
+            background: rgba(11, 25, 44, 0.78);
+            border: 1.5px solid var(--theme-color);
+            color: var(--theme-color);
+            box-shadow: 0 0 15px var(--theme-dim), inset 0 0 12px var(--theme-dim);
+            backdrop-filter: blur(8px);
+            transition: all 0.25s ease;
+        }
+
+        .holo-btn:hover {
+            background: var(--theme-color);
+            color: #06101E;
+            box-shadow: 0 0 25px var(--theme-glow);
+            transform: translateY(-1px);
+        }
+
+        .holo-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Active state for selected duration preset */
+        .holo-btn-active {
+            background: var(--theme-color) !important;
+            color: #06101E !important;
+            box-shadow: 0 0 20px var(--theme-glow) !important;
+        }
+
+        /* Auto-Hide UI Transition */
+        .ui-fade {
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ui-hidden {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transform: translateY(6px);
+        }
+
+        /* Prevent text selection on rapid classroom clicks */
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Modal Backdrop */
+        .modal-backdrop {
+            background: rgba(5, 12, 22, 0.85);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="state-cyan bg-mode-navy min-h-screen w-screen overflow-hidden flex flex-col items-center justify-center relative no-select transition-colors duration-300">
+
+    <!-- Top-Right Corner Controls: Background Mode, Sound Toggle & Video Export -->
+    <header id="topControls" class="ui-fade fixed top-5 right-5 z-30 flex flex-wrap items-center justify-end gap-3 px-4">
+        <!-- Download Video Button -->
+        <button id="openExportModalBtn" type="button" title="Render & Download Timer as a Video File"
+            class="holo-btn px-3.5 py-2 rounded-xl text-xs font-orbitron tracking-wider uppercase flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <span>DOWNLOAD VIDEO</span>
+        </button>
+
+        <!-- Audio Cue Toggle -->
+        <button id="soundToggleBtn" type="button" title="Toggle Audio Beep Cues"
+            class="holo-btn px-3.5 py-2 rounded-xl text-xs font-orbitron tracking-wider uppercase flex items-center gap-2">
+            <svg id="soundOnIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z"/>
+            </svg>
+            <svg id="soundOffIcon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+            </svg>
+            <span id="soundStatusText">SFX: ON</span>
+        </button>
+
+        <!-- Background Quick Toggle (Dark Navy #0B192C / Chroma Key Green #00FF00 / Transparent) -->
+        <button id="bgToggleBtn" type="button" title="Switch Background for Screen Recording or Chroma Key"
+            class="holo-btn px-4 py-2 rounded-xl text-xs font-orbitron tracking-wider uppercase flex items-center gap-2.5">
+            <span id="bgSwatch" class="w-3 h-3 rounded-full border border-white/60 inline-block" style="background-color: #0B192C;"></span>
+            <span id="bgModeLabel">BG: DARK NAVY (#0B192C)</span>
+        </button>
+    </header>
+
+    <!-- Main Holographic Timer Container -->
+    <main class="relative flex flex-col items-center justify-center w-full px-4">
+        
+        <!-- Interactive Timer Unit (Clicking directly toggles Start / Pause) -->
+        <div id="timerInteractiveArea" 
+             role="button" 
+             tabindex="0" 
+             aria-label="5 Minute Countdown Timer. Click or press Space to Start or Pause."
+             title="Click directly on the timer to Start / Pause"
+             class="relative flex items-center justify-center cursor-pointer group focus:outline-none paused-anim">
+
+            <!-- Responsive SVG Circular Progress Ring -->
+            <svg id="timerSvg" class="w-[82vw] h-[82vw] max-w-[460px] max-h-[460px] sm:w-[430px] sm:h-[430px] overflow-visible" viewBox="0 0 400 400">
+                <defs>
+                    <!-- Subtle radial gradient inside the dial -->
+                    <radialGradient id="dialCoreGrad" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#0B192C" stop-opacity="0.92" />
+                        <stop offset="82%" stop-color="#07111E" stop-opacity="0.96" />
+                        <stop offset="100%" stop-color="#050C16" stop-opacity="0.98" />
+                    </radialGradient>
+                </defs>
+
+                <!-- Solid Dark Hologram Backing Plate (prevents green spill in Chroma Key mode) -->
+                <circle cx="200" cy="200" r="184" fill="url(#dialCoreGrad)" />
+
+                <!-- Outer Decorative HUD Segmented Ring (Slowly Rotates) -->
+                <circle cx="200" cy="200" r="184" 
+                        fill="none" 
+                        stroke-width="1.5" 
+                        stroke-dasharray="6 14 28 14" 
+                        class="ring-track hud-rotate-cw opacity-75" />
+
+                <!-- Outer Cardinal Crosshair Ticks -->
+                <g class="ring-accent opacity-60" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="200" y1="8" x2="200" y2="18" />
+                    <line x1="392" y1="200" x2="382" y2="200" />
+                    <line x1="200" y1="392" x2="200" y2="382" />
+                    <line x1="8" y1="200" x2="18" y2="200" />
+                </g>
+
+                <!-- Background Depletion Track Ring -->
+                <circle cx="200" cy="200" r="162" 
+                        fill="none" 
+                        stroke-width="12" 
+                        class="ring-track" />
+
+                <!-- Primary Depleting Progress Ring (r=162 => Circumference ≈ 1017.876) -->
+                <circle id="progressRing" 
+                        cx="200" cy="200" r="162" 
+                        fill="none" 
+                        stroke-width="12" 
+                        stroke-linecap="round"
+                         transform="rotate(-90 200 200)"
+                        stroke-dasharray="1017.876" 
+                        stroke-dashoffset="0"
+                        class="ring-progress" />
+
+                <!-- Leading Tip Glowing Node (Orbits with the progress ring tip) -->
+                <circle id="progressTipNode"
+                        cx="200" cy="38" r="5"
+                        fill="#FFFFFF"
+                        class="ring-progress" />
+
+                <!-- Inner Rotating Telemetry Ring -->
+                <circle cx="200" cy="200" r="142" 
+                        fill="none" 
+                        stroke-width="1.2" 
+                        stroke-dasharray="3 9" 
+                        class="ring-track hud-rotate-ccw opacity-80" />
+
+                <!-- Inner Thin Frame Ring -->
+                <circle cx="200" cy="200" r="134" 
+                        fill="none" 
+                        stroke-width="1" 
+                        class="ring-track opacity-40" />
+            </svg>
+
+            <!-- Center Digital Readout Overlay -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-6 text-center">
+                
+                <!-- Top Micro Telemetry Label -->
+                <div class="flex items-center gap-2 mb-1 opacity-80">
+                    <span id="statusDot" class="w-2 h-2 rounded-full bg-current neon-text"></span>
+                    <span id="statusLabel" class="font-orbitron text-[11px] sm:text-xs tracking-[0.28em] uppercase neon-text">
+                        READY // 05:00
+                    </span>
+                </div>
+
+                <!-- Main Monospaced Digital Countdown Numbers -->
+                <div id="timeDisplay" 
+                     class="font-mono-tech neon-text text-7xl sm:text-[5.6rem] leading-none font-bold tracking-wider my-1">
+                    05:00
+                </div>
+
+                <!-- Sub-label / Interactive Hint -->
+                <div id="subHintLabel" class="font-orbitron text-[10px] sm:text-xs tracking-[0.22em] uppercase neon-text opacity-60 mt-2 transition-opacity duration-300 group-hover:opacity-95">
+                    CLICK TIMER TO START
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Minimal Semi-Transparent Controls (Auto-fade 2s after start, reappear on hover) -->
+        <div id="bottomControls" class="ui-fade mt-7 flex flex-col items-center justify-center gap-3.5 z-20">
+            <!-- Duration Preset Selector (1m, 3m, 5m, 10m) -->
+            <div id="durationControls" class="flex items-center justify-center gap-2 sm:gap-2.5">
+                <button type="button" data-minutes="1" class="duration-btn holo-btn px-3.5 py-1.5 rounded-xl font-orbitron text-xs font-bold tracking-wider uppercase">
+                    1 MIN
+                </button>
+                <button type="button" data-minutes="3" class="duration-btn holo-btn px-3.5 py-1.5 rounded-xl font-orbitron text-xs font-bold tracking-wider uppercase">
+                    3 MIN
+                </button>
+                <button type="button" data-minutes="5" class="duration-btn holo-btn holo-btn-active px-3.5 py-1.5 rounded-xl font-orbitron text-xs font-bold tracking-wider uppercase">
+                    5 MIN
+                </button>
+                <button type="button" data-minutes="10" class="duration-btn holo-btn px-3.5 py-1.5 rounded-xl font-orbitron text-xs font-bold tracking-wider uppercase">
+                    10 MIN
+                </button>
+            </div>
+
+            <!-- Start / Pause & Reset Row -->
+            <div class="flex items-center justify-center gap-4">
+                <!-- Start / Pause Button -->
+                <button id="startPauseBtn" type="button"
+                    class="holo-btn px-7 py-3 rounded-2xl font-orbitron text-sm sm:text-base font-extrabold tracking-widest uppercase flex items-center gap-3 min-w-[165px] justify-center">
+                    <!-- Play Icon -->
+                    <svg id="playIcon" class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    <!-- Pause Icon -->
+                    <svg id="pauseIcon" class="w-5 h-5 fill-current hidden" viewBox="0 0 24 24">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                    <span id="startPauseText">START</span>
+                </button>
+
+                <!-- Reset Button -->
+                <button id="resetBtn" type="button"
+                    class="holo-btn px-6 py-3 rounded-2xl font-orbitron text-sm sm:text-base font-bold tracking-widest uppercase flex items-center gap-2.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    <span>RESET</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Video Export & Recorder Modal -->
+    <div id="exportModal" class="fixed inset-0 z-50 modal-backdrop hidden items-center justify-center p-4">
+        <div class="bg-[#081322] border-2 border-[#00F0FF] rounded-3xl max-w-md w-full p-6 text-white shadow-[0_0_40px_rgba(0,240,255,0.25)] relative">
+            <div class="flex items-center justify-between border-b border-cyan-500/30 pb-3 mb-4">
+                <h2 class="font-orbitron text-base sm:text-lg font-bold tracking-wider text-[#00F0FF] flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    EXPORT TIMER VIDEO
+                </h2>
+                <button id="closeExportModalBtn" type="button" class="text-cyan-400 hover:text-white p-1 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Configuration Options -->
+            <div id="exportConfigSection" class="space-y-4 text-xs sm:text-sm">
+                <p class="text-cyan-100/80 leading-relaxed">
+                    Generate a clean, button-free 1080x1080 HD video file of the holographic countdown timer using your active background mode (<strong id="modalActiveBgText" class="text-[#00F0FF]">Dark Navy</strong>).
+                </p>
+
+                <div>
+                    <label class="block font-orbitron text-[11px] uppercase tracking-wider text-cyan-300 mb-1.5">
+                        Export Mode / Speed
+                    </label>
+                    <select id="exportPresetSelect" class="w-full bg-[#050C16] border border-cyan-500/60 rounded-xl px-3.5 py-2.5 text-cyan-100 font-orbitron text-xs focus:outline-none focus:border-[#00F0FF]">
+                        <option id="exportOptionRealtime" value="realtime">Full 5:00 Real-Time Video (1x Speed - Takes 5 mins)</option>
+                        <option id="exportOptionFast10x" value="fast10x">Fast 10x Time-Lapse Preview (30 sec video - Takes 30s)</option>
+                        <option id="exportOptionDemo15s" value="demo15s" selected>Quick 15-Second Showcase (Shows Cyan → Amber → Red)</option>
+                    </select>
+                    <p id="exportPresetHint" class="text-[11px] text-cyan-300/70 mt-1.5">
+                        Renders a 15-second video demonstrating the full countdown depletion and all color shifts so you can test or speed-adjust it in your video editor.
+                    </p>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end gap-3">
+                    <button id="cancelExportBtn" type="button" class="px-4 py-2.5 rounded-xl border border-cyan-500/40 text-cyan-300 font-orbitron text-xs uppercase tracking-wider hover:bg-cyan-950/50">
+                        Cancel
+                    </button>
+                    <button id="startExportBtn" type="button" class="holo-btn px-5 py-2.5 rounded-xl font-orbitron text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                        <span>Start Rendering</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Rendering Progress Section -->
+            <div id="exportProgressSection" class="hidden space-y-4 py-2 text-center">
+                <div class="font-orbitron text-xs tracking-widest uppercase text-cyan-300" id="exportStatusTitle">
+                    RENDERING HOLOGRAPHIC FRAMES...
+                </div>
+
+                <div class="w-full bg-[#050C16] h-3 rounded-full overflow-hidden border border-cyan-500/40">
+                    <div id="exportProgressBar" class="bg-[#00F0FF] h-full w-0 transition-all duration-150 shadow-[0_0_12px_#00F0FF]"></div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs font-mono-tech text-cyan-200 px-1">
+                    <span id="exportProgressPercent">0%</span>
+                    <span id="exportSimulatedTime">Timer: 05:00</span>
+                </div>
+
+                <p class="text-[11px] text-cyan-200/70">
+                    Please keep this tab open while the video stream encodes. Your download will start automatically when finished.
+                </p>
+
+                <div class="pt-2 flex justify-center gap-3">
+                    <button id="finishEarlyExportBtn" type="button" class="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-300 font-orbitron text-xs uppercase tracking-wider hover:bg-amber-500/30">
+                        Save & Download Now
+                    </button>
+                    <button id="abortExportBtn" type="button" class="px-4 py-2 rounded-xl border border-rose-500/50 text-rose-300 font-orbitron text-xs uppercase tracking-wider hover:bg-rose-950/50">
+                        Abort
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offscreen High-Resolution Canvas for Video Rendering -->
+    <canvas id="videoExportCanvas" width="1080" height="1080" class="hidden"></canvas>
+
+    <script>
+        /**
+         * HOLOGRAPHIC COUNTDOWN TIMER (1m / 3m / 5m / 10m)
+         * High-precision requestAnimationFrame engine for ultra-smooth 60fps ring depletion,
+         * automatic threshold color shifts, Web Audio synthesizer cues, and auto-hiding controls.
+         */
+        (() => {
+            // --- Constants & Dynamic Duration ---
+            let selectedMinutes = 5;
+            let TOTAL_TIME_MS = selectedMinutes * 60 * 1000; // Default 300 seconds (5 minutes)
+            const AMBER_THRESHOLD_MS = 60 * 1000; // 1 minute remaining
+            const RED_THRESHOLD_MS = 15 * 1000; // 15 seconds remaining
+            const RING_RADIUS = 162;
+            const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ~1017.876
+            const UI_HIDE_DELAY_MS = 2000; // 2 seconds auto-fade when running
+
+            // --- State ---
+            let remainingMs = TOTAL_TIME_MS;
+            let isRunning = false;
+            let isCompleted = false;
+            let lastFrameTimestamp = null;
+            let rafId = null;
+            let hideUiTimeout = null;
+            let soundEnabled = true;
+            let lastAnnouncedSecond = selectedMinutes * 60;
+
+            // Background modes: 0 = Dark Navy (#0B192C), 1 = Chroma Green (#00FF00), 2 = Transparent
+            const bgModes = [
+                {
+                    className: 'bg-mode-navy',
+                    label: 'BG: DARK NAVY (#0B192C)',
+                    swatch: '#0B192C'
+                },
+                {
+                    className: 'bg-mode-chroma',
+                    label: 'BG: CHROMA GREEN (#00FF00)',
+                    swatch: '#00FF00'
+                },
+                {
+                    className: 'bg-mode-transparent',
+                    label: 'BG: TRANSPARENT',
+                    swatch: 'transparent'
+                }
+            ];
+            let currentBgIndex = 0;
+
+            // --- DOM Elements ---
+            const bodyEl = document.body;
+            const timerInteractiveArea = document.getElementById('timerInteractiveArea');
+            const progressRing = document.getElementById('progressRing');
+            const progressTipNode = document.getElementById('progressTipNode');
+            const timeDisplay = document.getElementById('timeDisplay');
+            const statusLabel = document.getElementById('statusLabel');
+            const subHintLabel = document.getElementById('subHintLabel');
+            const startPauseBtn = document.getElementById('startPauseBtn');
+            const startPauseText = document.getElementById('startPauseText');
+            const playIcon = document.getElementById('playIcon');
+            const pauseIcon = document.getElementById('pauseIcon');
+            const resetBtn = document.getElementById('resetBtn');
+            const bgToggleBtn = document.getElementById('bgToggleBtn');
+            const bgModeLabel = document.getElementById('bgModeLabel');
+            const bgSwatch = document.getElementById('bgSwatch');
+            const soundToggleBtn = document.getElementById('soundToggleBtn');
+            const soundOnIcon = document.getElementById('soundOnIcon');
+            const soundOffIcon = document.getElementById('soundOffIcon');
+            const soundStatusText = document.getElementById('soundStatusText');
+            const bottomControls = document.getElementById('bottomControls');
+            const topControls = document.getElementById('topControls');
+            const durationBtns = document.querySelectorAll('.duration-btn');
+
+            // Video Export DOM Elements
+            const openExportModalBtn = document.getElementById('openExportModalBtn');
+            const closeExportModalBtn = document.getElementById('closeExportModalBtn');
+            const cancelExportBtn = document.getElementById('cancelExportBtn');
+            const startExportBtn = document.getElementById('startExportBtn');
+            const finishEarlyExportBtn = document.getElementById('finishEarlyExportBtn');
+            const abortExportBtn = document.getElementById('abortExportBtn');
+            const exportModal = document.getElementById('exportModal');
+            const exportConfigSection = document.getElementById('exportConfigSection');
+            const exportProgressSection = document.getElementById('exportProgressSection');
+            const exportPresetSelect = document.getElementById('exportPresetSelect');
+            const exportPresetHint = document.getElementById('exportPresetHint');
+            const modalActiveBgText = document.getElementById('modalActiveBgText');
+            const exportProgressBar = document.getElementById('exportProgressBar');
+            const exportProgressPercent = document.getElementById('exportProgressPercent');
+            const exportSimulatedTime = document.getElementById('exportSimulatedTime');
+            const videoExportCanvas = document.getElementById('videoExportCanvas');
+            const exportOptionRealtime = document.getElementById('exportOptionRealtime');
+            const exportOptionFast10x = document.getElementById('exportOptionFast10x');
+
+            // Initialize SVG stroke-dasharray
+            progressRing.style.strokeDasharray = `${RING_CIRCUMFERENCE}`;
+            progressRing.style.strokeDashoffset = `0`;
+
+            // --- Web Audio API Synthesizer for Classroom Cues (No external MP3 required) ---
+            let audioCtx = null;
+            function initAudio() {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) {
+                        audioCtx = new AudioContext();
+                    }
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }
+
+            function playBeep(freq = 880, duration = 0.08, type = 'sine', gainVal = 0.12) {
+                if (!soundEnabled) return;
+                try {
+                    initAudio();
+                    if (!audioCtx) return;
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                    gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + duration);
+                } catch (e) {
+                    // Ignore audio errors if browser blocks autoplay
+                }
+            }
+
+            function playTimesUpChord() {
+                if (!soundEnabled) return;
+                // Futuristic triple pulse alarm
+                [0, 180, 360].forEach((delay) => {
+                    setTimeout(() => {
+                        playBeep(587.33, 0.14, 'triangle', 0.18); // D5
+                        setTimeout(() => playBeep(880, 0.16, 'sine', 0.18), 60); // A5
+                    }, delay);
+                });
+            }
+
+            // --- Formatting Helpers ---
+            function formatTime(ms) {
+                const totalSeconds = Math.ceil(ms / 1000);
+                const mins = Math.floor(totalSeconds / 60);
+                const secs = totalSeconds % 60;
+                const paddedMins = String(mins).padStart(2, '0');
+                const paddedSecs = String(secs).padStart(2, '0');
+                return `${paddedMins}:${paddedSecs}`;
+            }
+
+            // --- Visual Theme & Ring Updater ---
+            function updateVisuals() {
+                // 1. Update Progress Ring Depletion smoothly
+                const fraction = Math.max(0, Math.min(1, remainingMs / TOTAL_TIME_MS));
+                const offset = RING_CIRCUMFERENCE * (1 - fraction);
+                progressRing.style.strokeDashoffset = `${offset}`;
+
+                // Update orbiting tip node position
+                const angleRad = (fraction * 2 * Math.PI) - (Math.PI / 2);
+                const tipX = 200 + RING_RADIUS * Math.cos(angleRad);
+                const tipY = 200 + RING_RADIUS * Math.sin(angleRad);
+                progressTipNode.setAttribute('cx', tipX.toFixed(2));
+                progressTipNode.setAttribute('cy', tipY.toFixed(2));
+                progressTipNode.style.opacity = fraction <= 0.002 ? '0' : '1';
+
+                // 2. Determine Color State based on Remaining Time
+                bodyEl.classList.remove('state-cyan', 'state-amber', 'state-red');
+                timerInteractiveArea.classList.remove('pulsing-critical');
+                timeDisplay.classList.remove('times-up-anim');
+
+                if (remainingMs <= 0) {
+                    // 00:00 -> TIME'S UP!
+                    bodyEl.classList.add('state-red');
+                    timeDisplay.textContent = "TIME'S UP!";
+                    timeDisplay.classList.remove('text-7xl', 'sm:text-[5.6rem]');
+                    timeDisplay.classList.add('text-4xl', 'sm:text-5xl', 'font-orbitron', 'times-up-anim');
+                    statusLabel.textContent = 'EXPIRED // 00:00';
+                    subHintLabel.textContent = 'CLICK TO RESET';
+                    return;
+                } else {
+                    // Ensure standard numeric font size when not expired
+                    timeDisplay.classList.remove('text-4xl', 'sm:text-5xl', 'font-orbitron', 'times-up-anim');
+                    timeDisplay.classList.add('text-7xl', 'sm:text-[5.6rem]');
+                }
+
+                if (remainingMs <= RED_THRESHOLD_MS) {
+                    // Final 15 seconds: Coral Red (#FF3366) + Pulsing animation
+                    bodyEl.classList.add('state-red');
+                    if (isRunning) {
+                        timerInteractiveArea.classList.add('pulsing-critical');
+                    }
+                    statusLabel.textContent = isRunning ? 'FINAL SECONDS' : 'PAUSED // CRITICAL';
+                } else if (remainingMs <= AMBER_THRESHOLD_MS) {
+                    // Under 1 minute: Warm Amber (#FFB800)
+                    bodyEl.classList.add('state-amber');
+                    if (remainingMs === TOTAL_TIME_MS && !isRunning) {
+                        statusLabel.textContent = `READY // ${formatTime(TOTAL_TIME_MS)}`;
+                    } else {
+                        statusLabel.textContent = isRunning ? 'FINAL MINUTE' : 'PAUSED // WARNING';
+                    }
+                } else {
+                    // Default: Holographic Cyan (#00F0FF)
+                    bodyEl.classList.add('state-cyan');
+                    if (remainingMs === TOTAL_TIME_MS && !isRunning) {
+                        statusLabel.textContent = `READY // ${formatTime(TOTAL_TIME_MS)}`;
+                    } else {
+                        statusLabel.textContent = isRunning ? 'SYSTEM ACTIVE' : 'TIMER PAUSED';
+                    }
+                }
+
+                // 3. Update Monospaced Digital Numbers
+                timeDisplay.textContent = formatTime(remainingMs);
+            }
+
+            // --- Auto-Fade UI Controls Logic ---
+            function showControlsTemporary() {
+                bottomControls.classList.remove('ui-hidden');
+                topControls.classList.remove('ui-hidden');
+                subHintLabel.classList.remove('opacity-0');
+
+                clearTimeout(hideUiTimeout);
+                if (isRunning) {
+                    hideUiTimeout = setTimeout(() => {
+                        if (isRunning) {
+                            bottomControls.classList.add('ui-hidden');
+                            topControls.classList.add('ui-hidden');
+                            subHintLabel.classList.add('opacity-0');
+                        }
+                    }, UI_HIDE_DELAY_MS);
+                }
+            }
+
+            function keepControlsVisible() {
+                clearTimeout(hideUiTimeout);
+                bottomControls.classList.remove('ui-hidden');
+                topControls.classList.remove('ui-hidden');
+                subHintLabel.classList.remove('opacity-0');
+            }
+
+            // --- Animation Loop ---
+            function tick(timestamp) {
+                if (!isRunning) return;
+
+                if (!lastFrameTimestamp) {
+                    lastFrameTimestamp = timestamp;
+                }
+                const delta = timestamp - lastFrameTimestamp;
+                lastFrameTimestamp = timestamp;
+
+                remainingMs = Math.max(0, remainingMs - delta);
+
+                // Check second transitions for subtle audio feedback at thresholds
+                const currentWholeSecond = Math.ceil(remainingMs / 1000);
+                if (currentWholeSecond !== lastAnnouncedSecond) {
+                    if (currentWholeSecond === 60) {
+                        // Subtle double chime at 1 minute mark
+                        playBeep(660, 0.09, 'sine', 0.12);
+                    } else if (currentWholeSecond <= 15 && currentWholeSecond > 0) {
+                        // Soft tick during final 15 seconds
+                        playBeep(987.77, 0.05, 'sine', 0.09);
+                    }
+                    lastAnnouncedSecond = currentWholeSecond;
+                }
+
+                updateVisuals();
+
+                if (remainingMs <= 0) {
+                    completeTimer();
+                    return;
+                }
+
+                rafId = requestAnimationFrame(tick);
+            }
+
+            // --- Timer Actions ---
+            function startTimer() {
+                if (isCompleted) {
+                    resetTimer();
+                }
+
+                initAudio();
+                isRunning = true;
+                lastFrameTimestamp = null;
+
+                // Update buttons & HUD animations
+                timerInteractiveArea.classList.remove('paused-anim');
+                startPauseText.textContent = 'PAUSE';
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+                subHintLabel.textContent = 'CLICK TIMER TO PAUSE';
+
+                playBeep(784, 0.07, 'sine', 0.1); // Subtle start chirp
+                updateVisuals();
+                showControlsTemporary();
+
+                rafId = requestAnimationFrame(tick);
+            }
+
+            function pauseTimer() {
+                isRunning = false;
+                if (rafId) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+
+                timerInteractiveArea.classList.add('paused-anim');
+                timerInteractiveArea.classList.remove('pulsing-critical');
+                startPauseText.textContent = 'RESUME';
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                subHintLabel.textContent = 'CLICK TIMER TO RESUME';
+
+                playBeep(523.25, 0.07, 'sine', 0.1); // Subtle pause chirp
+                updateVisuals();
+                keepControlsVisible();
+            }
+
+            function toggleTimer() {
+                if (isCompleted) {
+                    resetTimer();
+                    return;
+                }
+                if (isRunning) {
+                    pauseTimer();
+                } else {
+                    startTimer();
+                }
+            }
+
+            function resetTimer() {
+                isRunning = false;
+                isCompleted = false;
+                if (rafId) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+
+                remainingMs = TOTAL_TIME_MS;
+                lastAnnouncedSecond = Math.ceil(TOTAL_TIME_MS / 1000);
+                lastFrameTimestamp = null;
+
+                timerInteractiveArea.classList.add('paused-anim');
+                timerInteractiveArea.classList.remove('pulsing-critical');
+                startPauseText.textContent = 'START';
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                subHintLabel.textContent = 'CLICK TIMER TO START';
+
+                updateVisuals();
+                keepControlsVisible();
+            }
+
+            function setDuration(minutes) {
+                selectedMinutes = minutes;
+                TOTAL_TIME_MS = selectedMinutes * 60 * 1000;
+
+                durationBtns.forEach((btn) => {
+                    const btnMins = parseInt(btn.getAttribute('data-minutes'), 10);
+                    btn.classList.toggle('holo-btn-active', btnMins === selectedMinutes);
+                });
+
+                playBeep(660, 0.05, 'sine', 0.09);
+                resetTimer();
+            }
+
+            function completeTimer() {
+                isRunning = false;
+                isCompleted = true;
+                if (rafId) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+
+                timerInteractiveArea.classList.add('paused-anim');
+                timerInteractiveArea.classList.remove('pulsing-critical');
+                startPauseText.textContent = 'RESTART';
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+
+                playTimesUpChord();
+                updateVisuals();
+                keepControlsVisible();
+            }
+
+            // --- Background Mode Cycling ---
+            function cycleBackgroundMode() {
+                bodyEl.classList.remove(bgModes[currentBgIndex].className);
+                currentBgIndex = (currentBgIndex + 1) % bgModes.length;
+                const nextMode = bgModes[currentBgIndex];
+
+                bodyEl.classList.add(nextMode.className);
+                bgModeLabel.textContent = nextMode.label;
+                bgSwatch.style.backgroundColor = nextMode.swatch;
+            }
+
+            // --- Event Listeners ---
+            startPauseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleTimer();
+            });
+
+            resetBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                resetTimer();
+            });
+
+            durationBtns.forEach((btn) => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const mins = parseInt(btn.getAttribute('data-minutes'), 10);
+                    if (mins) {
+                        setDuration(mins);
+                    }
+                });
+            });
+
+            // Clicking directly on the timer numbers / ring toggles Start/Pause
+            timerInteractiveArea.addEventListener('click', () => {
+                toggleTimer();
+            });
+
+            // Keyboard accessibility (Space or Enter toggles timer, R resets, B switches background)
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    toggleTimer();
+                } else if (e.key === 'r' || e.key === 'R') {
+                    resetTimer();
+                } else if (e.key === 'b' || e.key === 'B') {
+                    cycleBackgroundMode();
+                }
+            });
+
+            bgToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                cycleBackgroundMode();
+            });
+
+            soundToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                soundEnabled = !soundEnabled;
+                soundOnIcon.classList.toggle('hidden', !soundEnabled);
+                soundOffIcon.classList.toggle('hidden', soundEnabled);
+                soundStatusText.textContent = soundEnabled ? 'SFX: ON' : 'SFX: OFF';
+                if (soundEnabled) {
+                    playBeep(880, 0.06, 'sine', 0.1);
+                }
+            });
+
+            // Mouse movement or hover anywhere brings back the faded controls for 2 seconds
+            window.addEventListener('mousemove', () => {
+                showControlsTemporary();
+            });
+
+            window.addEventListener('touchstart', () => {
+                showControlsTemporary();
+            }, { passive: true });
+
+            // Keep controls visible while hovering directly over buttons
+            bottomControls.addEventListener('mouseenter', () => {
+                clearTimeout(hideUiTimeout);
+                bottomControls.classList.remove('ui-hidden');
+            });
+
+            bottomControls.addEventListener('mouseleave', () => {
+                if (isRunning) {
+                    showControlsTemporary();
+                }
+            });
+
+            topControls.addEventListener('mouseenter', () => {
+                clearTimeout(hideUiTimeout);
+                topControls.classList.remove('ui-hidden');
+            });
+
+            topControls.addEventListener('mouseleave', () => {
+                if (isRunning) {
+                    showControlsTemporary();
+                }
+            });
+
+            // --- Built-in HD Canvas Video Renderer & Exporter ---
+            let mediaRecorder = null;
+            let recordedChunks = [];
+            let exportRafId = null;
+            let isExporting = false;
+            let abortExportRequested = false;
+
+            function getPresetDescriptions() {
+                const totalSec = selectedMinutes * 60;
+                const fastSec = Math.round(totalSec / 10);
+                const formatted = formatTime(TOTAL_TIME_MS);
+                return {
+                    realtime: `Records a true ${selectedMinutes}-minute (${totalSec}s) countdown in real time. Note: You can click "Save & Download Now" at any point to save a shorter clip.`,
+                    fast10x: `Renders the entire ${selectedMinutes}-minute countdown at 10x speed into a ${fastSec}-second video file.`,
+                    demo15s: `Renders a 15-second video demonstrating the full ${formatted} depletion and color shifts so you can test or speed-adjust it in your video editor.`
+                };
+            }
+
+            function updateExportModalLabels() {
+                const totalSec = selectedMinutes * 60;
+                const fastSec = Math.round(totalSec / 10);
+                const formatted = formatTime(TOTAL_TIME_MS);
+                exportOptionRealtime.textContent = `Full ${formatted} Real-Time Video (1x Speed - Takes ${selectedMinutes} min${selectedMinutes > 1 ? 's' : ''})`;
+                exportOptionFast10x.textContent = `Fast 10x Time-Lapse Preview (${fastSec} sec video - Takes ${fastSec}s)`;
+                const descriptions = getPresetDescriptions();
+                exportPresetHint.textContent = descriptions[exportPresetSelect.value] || '';
+            }
+
+            exportPresetSelect.addEventListener('change', () => {
+                updateExportModalLabels();
+            });
+
+            function openExportModal() {
+                if (isRunning) {
+                    pauseTimer();
+                }
+                updateExportModalLabels();
+                modalActiveBgText.textContent = bgModes[currentBgIndex].label.replace('BG: ', '');
+                exportConfigSection.classList.remove('hidden');
+                exportProgressSection.classList.add('hidden');
+                exportModal.classList.remove('hidden');
+                exportModal.classList.add('flex');
+            }
+
+            function closeExportModal() {
+                if (isExporting) {
+                    abortExportRequested = true;
+                    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                        mediaRecorder.stop();
+                    }
+                    if (exportRafId) {
+                        cancelAnimationFrame(exportRafId);
+                    }
+                    isExporting = false;
+                }
+                exportModal.classList.add('hidden');
+                exportModal.classList.remove('flex');
+            }
+
+            openExportModalBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openExportModal();
+            });
+
+            closeExportModalBtn.addEventListener('click', closeExportModal);
+            cancelExportBtn.addEventListener('click', closeExportModal);
+
+            abortExportBtn.addEventListener('click', () => {
+                abortExportRequested = true;
+                closeExportModal();
+            });
+
+            finishEarlyExportBtn.addEventListener('click', () => {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
+            });
+
+            /**
+             * Renders a single 1080x1080 HD frame of the holographic timer onto the offscreen canvas
+             */
+            function drawHolographicFrameToCanvas(ctx, simRemainingMs, elapsedRealSec) {
+                const W = 1080;
+                const H = 1080;
+                const CX = W / 2;
+                const CY = H / 2;
+                const SCALE = 2.4; // Scale from 400x400 SVG coordinate space to 1080x1080
+
+                ctx.clearRect(0, 0, W, H);
+
+                // 1. Background Fill based on current mode
+                if (currentBgIndex === 0) {
+                    // Dark Navy (#0B192C) + subtle grid
+                    ctx.fillStyle = '#0B192C';
+                    ctx.fillRect(0, 0, W, H);
+
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+                    ctx.lineWidth = 1;
+                    for (let x = 0; x < W; x += 60) {
+                        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+                    }
+                    for (let y = 0; y < H; y += 60) {
+                        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+                    }
+                } else if (currentBgIndex === 1) {
+                    // Chroma Key Green (#00FF00)
+                    ctx.fillStyle = '#00FF00';
+                    ctx.fillRect(0, 0, W, H);
+                }
+                // currentBgIndex === 2 leaves canvas transparent (alpha channel)
+
+                // 2. Determine Theme Color from simRemainingMs
+                let themeColor = '#00F0FF';
+                let themeGlow = 'rgba(0, 240, 255, 0.75)';
+                let themeDim = 'rgba(0, 240, 255, 0.22)';
+                let statusStr = 'SYSTEM ACTIVE';
+
+                if (simRemainingMs <= 0) {
+                    themeColor = '#FF3366';
+                    themeGlow = 'rgba(255, 51, 102, 0.85)';
+                    themeDim = 'rgba(255, 51, 102, 0.28)';
+                    statusStr = 'EXPIRED // 00:00';
+                } else if (simRemainingMs <= RED_THRESHOLD_MS) {
+                    themeColor = '#FF3366';
+                    themeGlow = 'rgba(255, 51, 102, 0.85)';
+                    themeDim = 'rgba(255, 51, 102, 0.28)';
+                    statusStr = 'FINAL SECONDS';
+                } else if (simRemainingMs <= AMBER_THRESHOLD_MS) {
+                    themeColor = '#FFB800';
+                    themeGlow = 'rgba(255, 184, 0, 0.75)';
+                    themeDim = 'rgba(255, 184, 0, 0.24)';
+                    statusStr = 'FINAL MINUTE';
+                }
+
+                // Optional pulse scale during final 15 seconds
+                let pulseScale = 1;
+                if (simRemainingMs > 0 && simRemainingMs <= RED_THRESHOLD_MS) {
+                    pulseScale = 1 + 0.025 * Math.sin(elapsedRealSec * Math.PI * 2.3);
+                }
+
+                ctx.save();
+                ctx.translate(CX, CY);
+                ctx.scale(pulseScale, pulseScale);
+
+                // 3. Dark Hologram Backing Plate (prevents Chroma Key spill)
+                const plateRadius = 184 * SCALE;
+                const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, plateRadius);
+                grad.addColorStop(0, 'rgba(11, 25, 44, 0.95)');
+                grad.addColorStop(0.85, 'rgba(7, 17, 30, 0.97)');
+                grad.addColorStop(1, 'rgba(5, 12, 22, 0.99)');
+                ctx.beginPath();
+                ctx.arc(0, 0, plateRadius, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                // 4. Outer Rotating Segmented HUD Ring
+                ctx.save();
+                ctx.rotate((elapsedRealSec * 6 * Math.PI) / 180);
+                ctx.beginPath();
+                ctx.arc(0, 0, 184 * SCALE, 0, Math.PI * 2);
+                ctx.strokeStyle = themeDim;
+                ctx.lineWidth = 1.6 * SCALE;
+                ctx.setLineDash([6 * SCALE, 14 * SCALE, 28 * SCALE, 14 * SCALE]);
+                ctx.stroke();
+                ctx.restore();
+
+                // 5. Background Track Ring
+                const mainRadius = 162 * SCALE;
+                ctx.beginPath();
+                ctx.arc(0, 0, mainRadius, 0, Math.PI * 2);
+                ctx.strokeStyle = themeDim;
+                ctx.lineWidth = 12 * SCALE;
+                ctx.setLineDash([]);
+                ctx.stroke();
+
+                // 6. Depleting Glowing Progress Ring
+                const fraction = Math.max(0, Math.min(1, simRemainingMs / TOTAL_TIME_MS));
+                if (fraction > 0.001) {
+                    const startAngle = -Math.PI / 2;
+                    const endAngle = startAngle + fraction * Math.PI * 2;
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(0, 0, mainRadius, startAngle, endAngle, false);
+                    ctx.strokeStyle = themeColor;
+                    ctx.lineWidth = 12 * SCALE;
+                    ctx.lineCap = 'round';
+                    ctx.shadowColor = themeGlow;
+                    ctx.shadowBlur = 28;
+                    ctx.stroke();
+
+                    // Leading Tip Glowing Orb
+                    const tipX = mainRadius * Math.cos(endAngle);
+                    const tipY = mainRadius * Math.sin(endAngle);
+                    ctx.beginPath();
+                    ctx.arc(tipX, tipY, 5 * SCALE, 0, Math.PI * 2);
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.shadowColor = themeColor;
+                    ctx.shadowBlur = 24;
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // 7. Inner Counter-Rotating Telemetry Ring
+                ctx.save();
+                ctx.rotate((-elapsedRealSec * 8 * Math.PI) / 180);
+                ctx.beginPath();
+                ctx.arc(0, 0, 142 * SCALE, 0, Math.PI * 2);
+                ctx.strokeStyle = themeDim;
+                ctx.lineWidth = 1.3 * SCALE;
+                ctx.setLineDash([3 * SCALE, 9 * SCALE]);
+                ctx.stroke();
+                ctx.restore();
+
+                // 8. Center Digital Readout & Status Telemetry
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = themeColor;
+                ctx.shadowColor = themeGlow;
+                ctx.shadowBlur = 24;
+
+                // Top status label
+                ctx.font = `700 ${Math.round(12 * SCALE)}px Orbitron, sans-serif`;
+                ctx.fillText(statusStr, 0, -56 * SCALE);
+
+                // Main Countdown Numbers or TIME'S UP!
+                if (simRemainingMs <= 0) {
+                    ctx.font = `900 ${Math.round(36 * SCALE)}px Orbitron, sans-serif`;
+                    ctx.fillText("TIME'S UP!", 0, 6 * SCALE);
+                } else {
+                    ctx.font = `700 ${Math.round(74 * SCALE)}px "Share Tech Mono", monospace`;
+                    ctx.fillText(formatTime(simRemainingMs), 0, 6 * SCALE);
+                }
+
+                ctx.restore();
+            }
+
+            function getSupportedMimeType() {
+                const types = [
+                    'video/webm;codecs=vp9',
+                    'video/webm;codecs=vp8',
+                    'video/webm',
+                    'video/mp4'
+                ];
+                for (const t of types) {
+                    if (window.MediaRecorder && MediaRecorder.isTypeSupported(t)) {
+                        return t;
+                    }
+                }
+                return '';
+            }
+
+            startExportBtn.addEventListener('click', () => {
+                const mimeType = getSupportedMimeType();
+                if (!window.MediaRecorder || !mimeType) {
+                    statusLabel.textContent = 'RECORDER UNSUPPORTED';
+                    closeExportModal();
+                    return;
+                }
+
+                const preset = exportPresetSelect.value;
+                // Total real-world duration of the recording in ms
+                let targetRealDurationMs = 15000;
+                if (preset === 'realtime') targetRealDurationMs = TOTAL_TIME_MS;
+                if (preset === 'fast10x') targetRealDurationMs = Math.round(TOTAL_TIME_MS / 10);
+
+                // Switch Modal UI to Progress View
+                exportConfigSection.classList.add('hidden');
+                exportProgressSection.classList.remove('hidden');
+                exportProgressBar.style.width = '0%';
+                exportProgressPercent.textContent = '0%';
+                exportSimulatedTime.textContent = `Timer: ${formatTime(TOTAL_TIME_MS)}`;
+
+                const ctx = videoExportCanvas.getContext('2d');
+                const stream = videoExportCanvas.captureStream(60);
+                recordedChunks = [];
+                abortExportRequested = false;
+                isExporting = true;
+
+                mediaRecorder = new MediaRecorder(stream, {
+                    mimeType,
+                    videoBitsPerSecond: 8000000 // Crisp 8 Mbps HD
+                });
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) {
+                        recordedChunks.push(e.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    isExporting = false;
+                    if (exportRafId) {
+                        cancelAnimationFrame(exportRafId);
+                    }
+                    if (abortExportRequested || recordedChunks.length === 0) {
+                        return;
+                    }
+
+                    const blob = new Blob(recordedChunks, { type: mimeType });
+                    const url = URL.createObjectURL(blob);
+                    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                    const bgTag = currentBgIndex === 0 ? 'navy' : currentBgIndex === 1 ? 'chromakey' : 'transparent';
+
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `holographic-${selectedMinutes}min-timer-${bgTag}-${preset}.${ext}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+                    closeExportModal();
+                };
+
+                // Draw initial frame and start recording
+                drawHolographicFrameToCanvas(ctx, TOTAL_TIME_MS, 0);
+                mediaRecorder.start(200);
+
+                const startTime = performance.now();
+                const holdEndMs = 1200; // Hold on "TIME'S UP!" for 1.2s at the end
+
+                function renderExportLoop(now) {
+                    if (!isExporting || abortExportRequested) return;
+
+                    const elapsed = now - startTime;
+                    const progressRatio = Math.min(1, elapsed / targetRealDurationMs);
+                    const simRemainingMs = Math.max(0, TOTAL_TIME_MS * (1 - progressRatio));
+
+                    drawHolographicFrameToCanvas(ctx, simRemainingMs, elapsed / 1000);
+
+                    const pct = Math.min(100, Math.round((elapsed / (targetRealDurationMs + holdEndMs)) * 100));
+                    exportProgressBar.style.width = `${pct}%`;
+                    exportProgressPercent.textContent = `${pct}%`;
+                    exportSimulatedTime.textContent = simRemainingMs <= 0
+                        ? "Timer: TIME'S UP!"
+                        : `Timer: ${formatTime(simRemainingMs)}`;
+
+                    if (elapsed < targetRealDurationMs + holdEndMs) {
+                        exportRafId = requestAnimationFrame(renderExportLoop);
+                    } else {
+                        if (mediaRecorder && mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
+                        }
+                    }
+                }
+
+                exportRafId = requestAnimationFrame(renderExportLoop);
+            });
+
+            // Initial Render
+            updateVisuals();
+        })();
+    </script>
+</body>
+</html>
